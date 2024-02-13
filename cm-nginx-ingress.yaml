@@ -1,0 +1,28 @@
+apiVersion: v1
+data:
+  client-max-body-size: 1m
+  error-log-level: debug
+  http-snippets: |
+    map_hash_bucket_size 128;
+    map $http_apikey $api_key_name {
+    default "";
+
+    "a" "key_one";
+    "bbb" "key_two";
+    "ccc" "key_three";
+    }
+  http2: "True"
+  lb-method: round_robin
+  log-format: $remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent
+    "$http_referer" "$http_user_agent" "$http_x_forwarded_for" rn="$resource_name"
+    "$resource_type" "$resource_namespace" svc="$service" "$request_id" rt=“$request_time”
+    ua=“$upstream_addr” uct="$upstream_connect_time" uht="$upstream_header_time" urt="$upstream_response_time"
+    uqt=“$upstream_queue_time“ cs=“$upstream_cache_status“
+  resolver-addresses: 10.96.0.10
+  resolver-valid: 5s
+kind: ConfigMap
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+  name: nginx-config
+  namespace: nginx-ingress

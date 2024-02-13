@@ -1,0 +1,37 @@
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServer
+metadata:
+  annotations:
+  name: case-c
+  namespace: default
+spec:
+  host: case-c.example.com
+  http-snippets: |
+  routes:
+  - action:
+      pass: hello-world
+    path: /health
+  - action:
+    path: /
+    policies:
+    - name: oidc-policy
+  server-snippets: |
+  tls:
+    redirect:
+      code: 301
+      enable: true
+    secret: cafe-secret
+  upstreams:
+  - healthCheck:
+      connect-timeout: 30s
+      enable: true
+      fails: 5
+      interval: 20s
+      jitter: 3s
+      passes: 2
+      path: /
+      port: 8000
+    lb-method: round_robin
+    name: hello-world
+    port: 80
+    service: hello-world-service

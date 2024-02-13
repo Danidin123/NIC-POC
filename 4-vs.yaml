@@ -1,0 +1,37 @@
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServer
+metadata:
+  annotations:
+  name: case-d
+  namespace: default
+spec:
+  host: case-d.example.com
+  http-snippets: |
+   proxy_cache_path /var/tmp/d levels=1 keys_zone=mycache:10m use_temp_path=off;
+  routes:
+  - action:
+      pass: httpbin
+    location-snippets: |
+      proxy_cache mycache;
+      proxy_cache_valid any 10m;
+    path: /
+  server-snippets: |
+    add_header X-Cache-Status $upstream_cache_status;
+  tls:
+    redirect:
+      code: 301
+      enable: true
+    secret: cafe-secret
+  upstreams:
+  - client-max-body-size: 1m
+    healthCheck:
+      connect-timeout: 30s
+      enable: true
+      fails: 5
+      interval: 20s
+      jitter: 3s
+      passes: 2
+      path: /
+    name: httpbin
+    port: 80
+    service: httpbin-svc-node

@@ -1,0 +1,67 @@
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServer
+metadata:
+  annotations:
+  name: case-b
+  namespace: default
+spec:
+  host: case-b.example.com
+  http-snippets: |
+  routes:
+  - action:
+      proxy:
+        requestHeaders:
+          pass: true
+          set:
+          - name: Host
+            value: test.com
+        responseHeaders:
+          add:
+          - always: true
+            name: IC-Nginx-Version
+            value: ${nginx_version}
+          hide:
+          - content-type
+        upstream: hello-world
+    location-snippets: |
+      auth_request /_validate_apikey;
+    path: /
+  server-snippets: |
+    location = /_validate_apikey {
+        internal;
+
+        if ($http_apikey = "") {
+            return 401; # Unauthorized
+        }
+        if ($api_key_name = "") {
+            return 403; # Forbidden
+        }
+        return 204; # OK (no content)
+    }
+  tls:
+    redirect:
+      code: 301
+      enable: true
+    secret: cafe-secret
+  upstreams:
+  - healthCheck:
+      connect-timeout: 30s
+      enable: true
+      fails: 5
+      interval: 20s
+      jitter: 3s
+      passes: 2
+      path: /
+      statusMatch: "200"
+    lb-method: round_robin
+    name: hello-world
+    port: 80
+    service: hello-world-service
+    sessionCookie:
+      domain: case-b.example.com
+      enable: true
+      expires: 1h
+      httpOnly: false
+      name: srv_id
+      path: /
+      secure: true
